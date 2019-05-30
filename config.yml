@@ -1,0 +1,7 @@
+database:
+  url: "root:root@/berater?charset=utf8mb4&parseTime=True"
+  dialect: "mysql"
+jwt:
+  secret_key: "jwt_secret_key"
+  timeout: 120
+  prefix: "Bearer"
