@@ -12,9 +12,17 @@ type Config struct {
 		Url     string
 	}
 	Jwt struct {
-		SecretKey string `yaml:"secret_key"`
-		Timeout   int
-		Prefix    string
+		ExpireTime uint   `yaml:"expire_time"`
+		Prefix     string
+		SecretKey  string `yaml:"secret_key"`
+	}
+	Redis struct {
+		Addr string
+	}
+	Code struct {
+		ExpireTime uint `yaml:"expire_time"`
+		Length     int
+		Suffix     string
 	}
 }
 

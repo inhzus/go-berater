@@ -25,7 +25,7 @@ func JwtMiddleware() gin.HandlerFunc {
 		auth := context.Request.Header.Get("Authorization")
 		claims, err := ParseToken(auth)
 		if err != nil {
-			_ = context.AbortWithError(http.StatusUnauthorized, err)
+			context.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"msg": err.Error(),})
 			return
 		}
 		context.Set("claims", claims)
@@ -38,7 +38,7 @@ func CreateToken(openid string) (string, error) {
 		openid,
 		jwt.StandardClaims{
 			NotBefore: time.Now().Unix(),
-			ExpiresAt: time.Now().Local().Add(time.Duration(c.Jwt.Timeout) * time.Minute).Unix(),
+			ExpiresAt: time.Now().Local().Add(time.Duration(c.Jwt.ExpireTime) * time.Minute).Unix(),
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
