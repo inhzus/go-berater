@@ -1,0 +1,9 @@
+package: github.com/inhzus/go-berater
+import:
+- package: github.com/dgrijalva/jwt-go
+- package: github.com/gin-gonic/gin
+- package: github.com/go-redis/redis
+- package: github.com/jinzhu/gorm
+  subpackages:
+  - dialects/mysql
+- package: gopkg.in/yaml.v2

@@ -1,3 +1,6 @@
 .idea/
 go-berater
+config.yml
+vendor/
+glide.lock
 
