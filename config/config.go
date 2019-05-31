@@ -12,7 +12,7 @@ type Config struct {
 		Url     string
 	}
 	Jwt struct {
-		ExpireTime uint   `yaml:"expire_time"`
+		ExpireTime uint `yaml:"expire_time"`
 		Prefix     string
 		SecretKey  string `yaml:"secret_key"`
 	}
@@ -20,9 +20,11 @@ type Config struct {
 		Addr string
 	}
 	Code struct {
-		ExpireTime uint `yaml:"expire_time"`
-		Length     int
-		Suffix     string
+		ExpireTime   uint `yaml:"expire_time"`
+		Length       int
+		Suffix       string
+		AccessKey    string `yaml:"access_key"`
+		AccessSecret string `yaml:"access_secret"`
 	}
 }
 

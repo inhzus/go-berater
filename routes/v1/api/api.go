@@ -5,6 +5,7 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/inhzus/go-berater/config"
 	"github.com/inhzus/go-berater/middlewares"
+	"github.com/inhzus/go-berater/utils"
 	"math/rand"
 	"net/http"
 	"strconv"
@@ -72,18 +73,21 @@ func sendCode(c *gin.Context) {
 		lowerBound *= 10
 		upperBound *= 10
 	}
-	genCode := strconv.Itoa(lowerBound + rand.Intn(upperBound - lowerBound))
+	genCode := strconv.Itoa(lowerBound + rand.Intn(upperBound-lowerBound))
+	err = utils.SendSMS(phoneJson.Phone, genCode)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(),})
+		return
+	}
 	err = client.HMSet(claims.Openid+conf.Code.Suffix, map[string]interface{}{
 		"code":   genCode,
 		"phone":  phoneJson.Phone,
 		"status": false,
 	}).Err()
-	client.Expire(claims.Openid+conf.Code.Suffix, time.Duration(conf.Code.ExpireTime)*time.Minute)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(),})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"code": genCode,
-	})
+	client.Expire(claims.Openid+conf.Code.Suffix, time.Duration(conf.Code.ExpireTime)*time.Minute)
+	c.Status(http.StatusOK)
 }
