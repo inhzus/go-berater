@@ -34,6 +34,7 @@ func ApplyRoutes(r *gin.RouterGroup) {
 	{
 		auth.GET("/token", checkToken)
 		auth.POST("/code", sendCode)
+		auth.GET("/code/:code", checkCode)
 	}
 }
 
@@ -93,5 +94,16 @@ func sendCode(c *gin.Context) {
 }
 
 func checkCode(c *gin.Context) {
-
+	conf := config.GetConfig()
+	claims := c.MustGet(conf.Jwt.Identity).(*middlewares.OpenidClaims)
+	redisKey := claims.Openid + conf.Code.Suffix
+	code := c.Param("code")
+	cached, err := client.HGetAll(redisKey).Result()
+	if err != nil || cached["code"] != code {
+		c.Status(http.StatusNotFound)
+		return
+	}
+	client.HSet(redisKey, "status", true)
+	client.Expire(redisKey, time.Duration(conf.Code.ExpireTime)*time.Minute)
+	c.Status(http.StatusOK)
 }
