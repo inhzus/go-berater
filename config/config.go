@@ -12,19 +12,21 @@ type Config struct {
 		Url     string
 	}
 	Jwt struct {
-		ExpireTime uint `yaml:"expire_time"`
-		Prefix     string
-		SecretKey  string `yaml:"secret_key"`
+		ExpireTime uint `yaml:"expire_time"`  // Token expire time (minute)
+		Header     string                     // Header name in request header, e.g. "Authorization"
+		Identity   string                     // Claim identity name in gin.Context, e.g. "claims"
+		Prefix     string                     // Token prefix in header, e.g. "Bearer"
+		SecretKey  string `yaml:"secret_key"` // JWT signing secret key
 	}
 	Redis struct {
-		Addr string
+		Addr string // e.g. "localhost:6379"
 	}
 	Code struct {
-		ExpireTime   uint `yaml:"expire_time"`
-		Length       int
-		Suffix       string
 		AccessKey    string `yaml:"access_key"`
 		AccessSecret string `yaml:"access_secret"`
+		ExpireTime   uint   `yaml:"expire_time"` // Code expire time in redis
+		Length       int                         // e.g. code is in range(1000, 9999) when length=4
+		Suffix       string                      // Key name suffix stored in redis
 	}
 }
 

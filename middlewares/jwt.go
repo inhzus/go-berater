@@ -22,13 +22,14 @@ type OpenidClaims struct {
 
 func JwtMiddleware() gin.HandlerFunc {
 	return func(context *gin.Context) {
-		auth := context.Request.Header.Get("Authorization")
+		c := config.GetConfig()
+		auth := context.Request.Header.Get(c.Jwt.Header)
 		claims, err := ParseToken(auth)
 		if err != nil {
 			context.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"msg": err.Error(),})
 			return
 		}
-		context.Set("claims", claims)
+		context.Set(c.Jwt.Identity, claims)
 	}
 }
 

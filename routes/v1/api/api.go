@@ -55,7 +55,7 @@ func checkToken(c *gin.Context) {
 
 func sendCode(c *gin.Context) {
 	conf := config.GetConfig()
-	claims := c.MustGet("claims").(*middlewares.OpenidClaims)
+	claims := c.MustGet(conf.Jwt.Identity).(*middlewares.OpenidClaims)
 	var phoneJson struct {
 		Phone string
 	}
@@ -90,4 +90,8 @@ func sendCode(c *gin.Context) {
 	}
 	client.Expire(claims.Openid+conf.Code.Suffix, time.Duration(conf.Code.ExpireTime)*time.Minute)
 	c.Status(http.StatusOK)
+}
+
+func checkCode(c *gin.Context) {
+
 }
