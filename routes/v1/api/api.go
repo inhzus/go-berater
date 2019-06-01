@@ -5,6 +5,7 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/inhzus/go-berater/config"
 	"github.com/inhzus/go-berater/middlewares"
+	"github.com/inhzus/go-berater/models"
 	"github.com/inhzus/go-berater/utils"
 	"math/rand"
 	"net/http"
@@ -35,6 +36,7 @@ func ApplyRoutes(r *gin.RouterGroup) {
 		auth.GET("/token", checkToken)
 		auth.POST("/code", sendCode)
 		auth.GET("/code/:code", checkCode)
+		auth.POST("/candidate", addCandidate)
 	}
 }
 
@@ -106,4 +108,31 @@ func checkCode(c *gin.Context) {
 	client.HSet(redisKey, "status", true)
 	client.Expire(redisKey, time.Duration(conf.Code.ExpireTime)*time.Minute)
 	c.Status(http.StatusOK)
+}
+
+func addCandidate(c *gin.Context) {
+	conf := config.GetConfig()
+	openid := c.MustGet(conf.Jwt.Identity).(*middlewares.OpenidClaims).Openid
+	redisKey := openid + conf.Code.Suffix
+	cached, err := client.HGet(redisKey, "status").Result()
+	if status, _ := strconv.ParseBool(cached); err != nil || !status {
+		c.JSON(http.StatusUnauthorized, gin.H{"msg": "Phone not verified",})
+	}
+	var candidate models.Candidate
+	err = c.ShouldBindJSON(&candidate)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error(),})
+		return
+	}
+	candidate.Openid = openid
+	if models.ExistCandidateById(openid) {
+		c.JSON(http.StatusConflict, gin.H{"msg": "Candidate has been created with the openid",})
+		return
+	}
+	err = models.AddCandidate(&candidate)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(),})
+	} else {
+		c.Status(http.StatusOK)
+	}
 }
