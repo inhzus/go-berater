@@ -28,10 +28,23 @@ func ExistCandidateById(openid string) bool {
 	return count != 0
 }
 
+func GetCandidateById(openid string) *Candidate {
+	var candidate []Candidate
+	db.Where("openid = ?", openid).Find(&candidate)
+	if len(candidate) != 0 {
+		return &candidate[0]
+	} else {
+		return nil
+	}
+}
+
 func AddCandidate(candidate *Candidate) error {
 	return db.Create(candidate).Error
 }
 
+func UpdateCandidate(openid string, candidate *Candidate) error {
+	return db.Model(&Candidate{}).Where("openid = ?", openid).Update(candidate).Error
+}
 
 func RemoveCandidateById(openid string) bool {
 	err := db.Where("openid = ?", openid).Delete(&Candidate{}).Error

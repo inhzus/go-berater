@@ -6,7 +6,6 @@ import (
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk"
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
 	"github.com/inhzus/go-berater/config"
-	"log"
 )
 
 func SendSMS(phone, code string) error {
@@ -32,7 +31,6 @@ func SendSMS(phone, code string) error {
 	if err != nil {
 		return err
 	}
-	log.Print(res)
 	var j map[string]interface{}
 	_ = json.Unmarshal(res.GetHttpContentBytes(), &j)
 	if j["Code"] == "OK" {

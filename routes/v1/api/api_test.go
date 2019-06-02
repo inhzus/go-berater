@@ -140,7 +140,7 @@ func TestAddCandidate(t *testing.T) {
 	r.ServeHTTP(w, req)
 	assert.Equal(t, w.Code, http.StatusBadRequest)
 
-	bodyBytes := `{"phone": "17602529171","name": "sunzhi","province": "sx","city": "123456","score": "675.5","subject": "li"}`
+	bodyBytes := `{"phone": "0","name": "inh","province": "sx","city": "123456","score": "675.5","subject": "li"}`
 
 	req = httptest.NewRequest("POST", "/api/candidate", strings.NewReader(bodyBytes))
 	req.Header.Set("Content-Type", "application/json")
@@ -167,7 +167,82 @@ func TestAddCandidate(t *testing.T) {
 	assert.Equal(t, w.Code, http.StatusConflict)
 
 	client.Del(redisKey)
-	if models.ExistCandidateById("test") {
-		models.RemoveCandidateById("test")
-	}
+	models.RemoveCandidateById("test")
+}
+
+func TestUpdateCandidate(t *testing.T) {
+	r := getEngine()
+
+	redisKey := "test_code"
+	client.Del(redisKey)
+	models.RemoveCandidateById("test")
+
+	token := getTestToken()
+	req := httptest.NewRequest("PATCH", "/api/candidate", nil)
+	req.Header.Set("Authorization", token)
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	assert.Equal(t, w.Code, http.StatusNotFound)
+
+	var added models.Candidate
+	addedString := `{"openid":"test","phone": "0","name": "inh","province": "sx","city": "123456","score": "675.5","subject": "li"}`
+	err := json.Unmarshal([]byte(addedString), &added)
+	assert.Equal(t, err, nil)
+	_ = models.AddCandidate(&added)
+
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	assert.Equal(t, w.Code, http.StatusBadRequest)
+
+	bodyString := `{"phone":"1","subject":"wen"}`
+	req = httptest.NewRequest("PATCH", "/api/candidate", strings.NewReader(bodyString))
+	req.Header.Set("Authorization", token)
+	req.Header.Set("Content-Type", "application/json")
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	assert.Equal(t, w.Code, http.StatusUnauthorized)
+
+	bodyString = `{"subject":"wen"}`
+	req = httptest.NewRequest("PATCH", "/api/candidate", strings.NewReader(bodyString))
+	req.Header.Set("Authorization", token)
+	req.Header.Set("Content-Type", "application/json")
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	assert.Equal(t, w.Code, http.StatusOK)
+	assert.Equal(t, models.GetCandidateById("test").Subject, "wen")
+
+	client.HMSet(redisKey, map[string]interface{}{
+		"status": false,
+		"phone": "1",
+		"code": "9999",
+	})
+	bodyString = `{"subject":"wex","phone":"1"}`
+	req = httptest.NewRequest("PATCH", "/api/candidate", strings.NewReader(bodyString))
+	req.Header.Set("Authorization", token)
+	req.Header.Set("Content-Type", "application/json")
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	assert.Equal(t, w.Code, http.StatusUnauthorized)
+
+	client.HSet(redisKey, "status", true)
+	bodyString = `{"subject":"wex","phone":"1"}`
+	req = httptest.NewRequest("PATCH", "/api/candidate", strings.NewReader(bodyString))
+	req.Header.Set("Authorization", token)
+	req.Header.Set("Content-Type", "application/json")
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	assert.Equal(t, w.Code, http.StatusOK)
+
+	bodyString = `{"subject":"wex","phone":"2"}`
+	req = httptest.NewRequest("PATCH", "/api/candidate", strings.NewReader(bodyString))
+	req.Header.Set("Authorization", token)
+	req.Header.Set("Content-Type", "application/json")
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	assert.Equal(t, w.Code, http.StatusUnauthorized)
+
+
+	models.RemoveCandidateById("openid")
+	client.Del(redisKey)
 }

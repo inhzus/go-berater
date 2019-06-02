@@ -37,6 +37,7 @@ func ApplyRoutes(r *gin.RouterGroup) {
 		auth.POST("/code", sendCode)
 		auth.GET("/code/:code", checkCode)
 		auth.POST("/candidate", addCandidate)
+		auth.PATCH("/candidate", updateCandidate)
 	}
 }
 
@@ -135,6 +136,53 @@ func addCandidate(c *gin.Context) {
 	err = models.AddCandidate(&candidate)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(),})
+	} else {
+		c.Status(http.StatusOK)
+	}
+}
+
+func updateCandidate(c *gin.Context) {
+	conf := config.GetConfig()
+	openid := c.MustGet(conf.Jwt.Identity).(*middlewares.OpenidClaims).Openid
+
+	existed := models.GetCandidateById(openid)
+
+	if existed == nil {
+		c.JSON(http.StatusNotFound, gin.H{"msg": "Candidate not created"})
+		return
+	}
+
+	var candidate models.Candidate
+	err := c.ShouldBindJSON(&candidate)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
+		return
+	}
+
+	redisKey := openid + conf.Code.Suffix
+	isExisted, _ := client.Exists(redisKey).Result()
+	badHit := false
+
+	if isExisted != 0 {
+		cached, _ := client.HGetAll(redisKey).Result()
+		status, _ := strconv.ParseBool(cached["status"])
+		if !status && cached["phone"] != existed.Phone {
+			badHit = true
+		}
+		if len(candidate.Phone) != 0 && candidate.Phone != cached["phone"] {
+			badHit = true
+		}
+	} else if len(candidate.Phone) != 0 && candidate.Phone != existed.Phone {
+		badHit = true
+	}
+	if badHit {
+		c.JSON(http.StatusUnauthorized, gin.H{"msg": "Phone not verified"})
+		return
+	}
+
+	err = models.UpdateCandidate(openid, &candidate)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
 	} else {
 		c.Status(http.StatusOK)
 	}
