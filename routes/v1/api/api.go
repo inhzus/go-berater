@@ -113,22 +113,25 @@ func checkCode(c *gin.Context) {
 func addCandidate(c *gin.Context) {
 	conf := config.GetConfig()
 	openid := c.MustGet(conf.Jwt.Identity).(*middlewares.OpenidClaims).Openid
-	redisKey := openid + conf.Code.Suffix
-	cached, err := client.HGet(redisKey, "status").Result()
-	if status, _ := strconv.ParseBool(cached); err != nil || !status {
-		c.JSON(http.StatusUnauthorized, gin.H{"msg": "Phone not verified",})
-	}
-	var candidate models.Candidate
-	err = c.ShouldBindJSON(&candidate)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error(),})
-		return
-	}
-	candidate.Openid = openid
 	if models.ExistCandidateById(openid) {
 		c.JSON(http.StatusConflict, gin.H{"msg": "Candidate has been created with the openid",})
 		return
 	}
+	var candidate models.Candidate
+	err := c.ShouldBindJSON(&candidate)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error(),})
+		return
+	}
+	redisKey := openid + conf.Code.Suffix
+	cached, err := client.HGet(redisKey, "status").Result()
+	if status, _ := strconv.ParseBool(cached); err != nil || !status {
+		c.JSON(http.StatusUnauthorized, gin.H{"msg": "Phone not verified",})
+		return
+	}
+	phone, _ := client.HGet(redisKey, "phone").Result()
+	candidate.Phone = phone
+	candidate.Openid = openid
 	err = models.AddCandidate(&candidate)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(),})

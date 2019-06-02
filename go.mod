@@ -10,5 +10,6 @@ require (
 	github.com/jinzhu/gorm v1.9.8
 	github.com/mattn/go-isatty v0.0.8 // indirect
 	golang.org/x/sys v0.0.0-20190530182044-ad28b68e88f1 // indirect
+	gopkg.in/go-playground/assert.v1 v1.2.1
 	gopkg.in/yaml.v2 v2.2.2
 )

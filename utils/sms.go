@@ -1,9 +1,12 @@
 package utils
 
 import (
+	"encoding/json"
+	"errors"
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk"
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
 	"github.com/inhzus/go-berater/config"
+	"log"
 )
 
 func SendSMS(phone, code string) error {
@@ -25,6 +28,16 @@ func SendSMS(phone, code string) error {
 	request.QueryParams["TemplateCode"] = "SMS_163433313"
 	request.QueryParams["TemplateParam"] = "{\"code\":\"" + code + "\"}"
 
-	_, err = client.ProcessCommonRequest(request)
-	return err
+	res, err := client.ProcessCommonRequest(request)
+	if err != nil {
+		return err
+	}
+	log.Print(res)
+	var j map[string]interface{}
+	_ = json.Unmarshal(res.GetHttpContentBytes(), &j)
+	if j["Code"] == "OK" {
+		return nil
+	} else {
+		return errors.New(j["Message"].(string))
+	}
 }
