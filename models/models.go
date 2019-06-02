@@ -14,6 +14,7 @@ func Setup() {
 	if err != nil {
 		log.Fatalf("Models.setup err: %v", err)
 	}
+	db.LogMode(true)
 	//db.CreateTable(&Candidate{})
 	//db.CreateTable(&Student{})
 	//db.CreateTable(&Freshman{})

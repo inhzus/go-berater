@@ -1,5 +1,7 @@
 package models
 
+import "github.com/jinzhu/gorm"
+
 /*
    openid = engine.Column(engine.String(30), primary_key=True)
    phone = engine.Column(engine.String(20), nullable=False)
@@ -10,7 +12,8 @@ package models
    subject = engine.Column(engine.String(10), nullable=False)
 */
 type Candidate struct {
-	Openid   string `gorm:"type:varchar(30);primary_key"`
+	gorm.Model
+	Openid   string `gorm:"type:varchar(30);not null;index"`
 	Phone    string `gorm:"type:varchar(20);not null"`
 	Name     string `gorm:"type:varchar(16);not null"`
 	Province string `gorm:"type:varchar(2);not null"`
@@ -20,11 +23,17 @@ type Candidate struct {
 }
 
 func ExistCandidateById(openid string) bool {
-	var candidate Candidate
-	db.Select("openid").Where("openid = ?", openid).First(&candidate)
-	return candidate.Openid == openid
+	var count int
+	db.Model(&Candidate{}).Where("openid = ?", openid).Count(&count)
+	return count != 0
 }
 
 func AddCandidate(candidate *Candidate) error {
 	return db.Create(candidate).Error
+}
+
+
+func RemoveCandidateById(openid string) bool {
+	err := db.Where("openid = ?", openid).Delete(&Candidate{}).Error
+	return err == nil
 }
